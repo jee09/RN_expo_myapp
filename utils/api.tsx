@@ -1,38 +1,37 @@
-import axios, {
-  AxiosError,
-  AxiosInstance,
-  AxiosResponse,
-  AxiosRequestConfig,
-} from 'axios';
-import { API_URL } from '@env';
+import axios, { AxiosResponse, AxiosError } from 'axios';
+import { SERVER_BASE_URL, KAKAO_BASE_URL, KAKAO_API_KEY } from '@env';
 
-interface ICustomConfig extends AxiosRequestConfig {
-  useCustomErrorHandle?: boolean;
-}
+const serverApi = axios.create({
+  baseURL: SERVER_BASE_URL,
+  timeout: 10000,
+});
 
-interface ICreateApiParams {
-  baseUrl: string;
-  customErrorHandler?: (error: AxiosError) => Promise<AxiosError>;
-}
+serverApi.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error: AxiosError) => {
+    console.log('Server API request failed: ', error);
+    return Promise.reject(error);
+  },
+);
 
-export const createApi = ({
-  baseUrl,
-  customErrorHandler,
-}: ICreateApiParams): AxiosInstance => {
-  const api: AxiosInstance = axios.create({
-    baseURL: baseUrl,
-  });
+const kakaoApi = axios.create({
+  baseURL: KAKAO_BASE_URL,
+  timeout: 10000,
+  headers: {
+    Authorization: KAKAO_API_KEY,
+  },
+});
 
-  api.interceptors.response.use(
-    (response: AxiosResponse) => response,
-    (error: AxiosError) => {
-      const config = error.config as ICustomConfig;
-      if (config?.useCustomErrorHandle === true || !customErrorHandler) {
-        return Promise.reject(error);
-      }
-      return customErrorHandler(error);
-    },
-  );
+kakaoApi.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error: AxiosError) => {
+    console.error('Kakao API request failed: ', error);
+    return Promise.reject(error);
+  },
+);
 
-  return api;
-};
+export { serverApi, kakaoApi };

@@ -2,22 +2,27 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import { MainPage } from './src/pages/Main.page';
 import { NotePage } from './src/pages/Note.page';
 import { StatsPage } from './src/pages/Stats.page';
+import { SearchPage } from './src/pages/Search.page';
+import { BookDetailPage } from './src/pages/Search.result.page';
 
 import { color } from './utils/color';
 
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 type IconName = 'book-outline' | 'pencil' | 'stats-chart';
 
 interface TabItem {
   name: string;
-  component: React.ComponentType;
+  component: React.FC<{}>;
   icon: IconName;
 }
 
@@ -38,6 +43,33 @@ const tabs: TabItem[] = [
     icon: 'stats-chart',
   },
 ];
+function LibraryStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{ headerShown: false, animationEnabled: false }}
+    >
+      <Stack.Screen name="MainPage" component={MainPage} />
+      <Stack.Screen name="SearchPage" component={SearchPage} />
+      <Stack.Screen name="BookDetailPage" component={BookDetailPage} />
+    </Stack.Navigator>
+  );
+}
+
+function NoteStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="NotePage" component={NotePage} />
+    </Stack.Navigator>
+  );
+}
+
+function StatsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="StatsPage" component={StatsPage} />
+    </Stack.Navigator>
+  );
+}
 
 export default function App() {
   return (
@@ -64,18 +96,33 @@ export default function App() {
               },
             }}
           >
-            {tabs.map((tab, index) => (
-              <Tab.Screen
-                key={index}
-                name={tab.name}
-                component={tab.component}
-                options={{
-                  tabBarIcon: ({ color }) => (
-                    <Ionicons name={tab.icon} size={22} color={color} />
-                  ),
-                }}
-              />
-            ))}
+            <Tab.Screen
+              name="서재"
+              component={LibraryStack}
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Ionicons name="book-outline" size={22} color={color} />
+                ),
+              }}
+            />
+            <Tab.Screen
+              name="노트"
+              component={NoteStack}
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Ionicons name="pencil" size={22} color={color} />
+                ),
+              }}
+            />
+            <Tab.Screen
+              name="통계"
+              component={StatsStack}
+              options={{
+                tabBarIcon: ({ color }) => (
+                  <Ionicons name="stats-chart" size={22} color={color} />
+                ),
+              }}
+            />
           </Tab.Navigator>
         </NavigationContainer>
       </SafeAreaView>

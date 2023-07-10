@@ -1,42 +1,54 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, View, Dimensions } from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
 import Carousel from 'react-native-snap-carousel';
-
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { color } from '../../utils/color';
+import CarouselItem from '../components/CarouselItem';
+import { useNavigation } from '@react-navigation/native';
 
 const windowWidth = Dimensions.get('window').width;
 
-interface CarouselItemProps {
-  title: string;
-}
-
-const CarouselItem: React.FC<CarouselItemProps> = ({ title }) => (
-  <View style={styles.viewchild}>
-    <Text>{title}</Text>
-  </View>
-);
+type RootStackParamList = {
+  SearchPage: undefined;
+};
 
 export const MainPage: React.FC = () => {
   const carouselItems = ['View1', 'View2', 'View3'];
 
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
+
   return (
     <View style={styles.container}>
-      <View style={styles.textinput}>
-        <Ionicons
-          name="search"
-          size={20}
-          color="gray"
-          style={{ marginRight: 8 }}
-        />
-        <TextInput placeholder="책 이름을 검색해보세요" />
-      </View>
+      <TouchableOpacity onPress={() => navigation.navigate('SearchPage')}>
+        <View style={styles.textinput}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="gray"
+            style={{ marginRight: 8 }}
+          />
+          <TextInput
+            placeholder="책 이름을 검색해보세요"
+            onFocus={() => navigation.navigate('SearchPage')}
+          />
+        </View>
+      </TouchableOpacity>
       <Carousel
         layout="default"
         data={carouselItems}
         sliderWidth={windowWidth}
         itemWidth={300}
-        renderItem={({ item }) => <CarouselItem title={item} />}
+        renderItem={({ item }: { item: string }) => (
+          <CarouselItem title={item} />
+        )}
         enableSnap={true}
       />
     </View>
@@ -56,16 +68,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 30,
     fontSize: 15,
-    width: 280,
+    width: 300,
     marginVertical: 20,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  viewchild: {
-    borderTopLeftRadius: 20,
-    backgroundColor: color.SUB_COLOR,
-    height: 600,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
