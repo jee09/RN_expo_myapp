@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -23,10 +24,14 @@ export interface Book {
   title: string;
   thumbnail: string;
   contents: string;
+  isbn: string;
 }
 
 interface ApiResponse {
   documents: Book[];
+  meta: {
+    is_end: boolean;
+  };
 }
 
 interface Props {
@@ -53,8 +58,12 @@ const BookItem: React.FC<{ item: Book; index: number }> = ({ item, index }) => {
           ) : (
             <View style={{ ...styles.thumbnail, backgroundColor: 'white' }} />
           )}
-          <View>
-            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{ fontWeight: 'bold', marginBottom: 10 }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {item.title}
             </Text>
             <Text>{item.authors.join(', ')}</Text>
@@ -69,6 +78,9 @@ export const SearchPage: React.FC = () => {
   const [searchResult, setSearchResult] = useState<ApiResponse | null>(null);
   const [searchWord, setSearchWord] = useState<string>('');
   const [text, setText] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [isEnd, setIsEnd] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const inputRef = useRef<TextInput>(null);
   const navigation = useNavigation();
@@ -86,7 +98,7 @@ export const SearchPage: React.FC = () => {
       setSearchResult(null);
       return;
     }
-    fetchData(searchWord)
+    fetchData(searchWord, page)
       .then((fetchedData) => {
         setSearchResult(fetchedData);
       })
@@ -97,15 +109,35 @@ export const SearchPage: React.FC = () => {
 
   const onChangeText = (payload: string) => setText(payload);
 
-  const fetchData = async (searchWord: string): Promise<ApiResponse> => {
+  const fetchData = async (
+    searchWord: string,
+    page: number,
+  ): Promise<ApiResponse> => {
     try {
+      setIsLoading(true);
       const response = await kakaoApi.get('/search/book', {
         params: {
           query: searchWord,
+          size: 50,
+          page,
         },
       });
+
+      setIsLoading(false);
+
+      if (!response.data.meta.is_end) {
+        setSearchResult((prev) => ({
+          ...response.data,
+          documents: [...(prev?.documents || []), ...response.data.documents],
+        }));
+        setPage(page + 1);
+      } else {
+        setIsEnd(true);
+      }
+
       return response.data;
     } catch (error) {
+      setIsLoading(false);
       console.error(error);
       throw error;
     }
@@ -118,6 +150,14 @@ export const SearchPage: React.FC = () => {
     }
     setSearchWord(text);
     setText('');
+    setPage(1);
+    setIsEnd(false);
+  };
+
+  const handleEnd = () => {
+    if (!isEnd) {
+      fetchData(searchWord, page);
+    }
   };
 
   return (
@@ -127,7 +167,7 @@ export const SearchPage: React.FC = () => {
           <Ionicons
             name="search"
             size={20}
-            color="gray"
+            color={color.TAB_COLOR}
             style={{ marginRight: 8 }}
           />
           <TextInput
@@ -136,6 +176,7 @@ export const SearchPage: React.FC = () => {
             onChangeText={onChangeText}
             ref={inputRef}
             placeholder={'제목으로 검색해주세요.'}
+            placeholderTextColor={color.MAIN_COLOR}
           />
         </View>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -143,15 +184,36 @@ export const SearchPage: React.FC = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.result}>
-        {searchResult && (
-          <FlatList
-            data={searchResult.documents}
-            renderItem={({ item, index }) => (
-              <BookItem item={item} index={index} />
-            )}
-            keyExtractor={(item) => item.title}
-          />
+        {isLoading && (
+          <View style={styles.loading}>
+            <ActivityIndicator size="large" color={color.TAB_COLOR} />
+          </View>
         )}
+        {searchResult ? (
+          searchResult.documents.length > 0 ? (
+            <FlatList
+              data={searchResult.documents}
+              renderItem={({ item, index }) => (
+                <BookItem item={item} index={index} />
+              )}
+              keyExtractor={(item) => item.isbn}
+              onEndReached={handleEnd}
+              onEndReachedThreshold={0.1}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                paddingHorizontal: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text>검색 결과가 없습니다.</Text>
+            </View>
+          )
+        ) : null}
       </View>
     </View>
   );
@@ -177,7 +239,7 @@ const styles = StyleSheet.create({
   },
   textinput: {
     backgroundColor: color.SUB_COLOR,
-    paddingVertical: 15,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
     fontSize: 15,
@@ -189,7 +251,11 @@ const styles = StyleSheet.create({
   cancel: {
     paddingVertical: 16,
   },
-  result: { flex: 0.99, width: windowWidth, marginTop: 10 },
+  result: {
+    flex: 1,
+    width: windowWidth,
+    marginTop: 10,
+  },
   bookContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,5 +267,15 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: color.MAIN_COLOR,
     marginVertical: 5,
+  },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 99,
   },
 });

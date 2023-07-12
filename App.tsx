@@ -7,7 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MainPage } from './src/pages/Main.page';
 import { NotePage } from './src/pages/Note.page';
 import { StatsPage } from './src/pages/Stats.page';
-import { SearchPage } from './src/pages/Search.page';
+import { Book, SearchPage } from './src/pages/Search.page';
 import { BookDetailPage } from './src/pages/Search.result.page';
 
 import { color } from './utils/color';
@@ -16,8 +16,15 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+type RootStackParamList = {
+  MainPage: undefined;
+  SearchPage: undefined;
+  NotePage: undefined;
+  StatsPage: undefined;
+  BookDetailPage: { book: Book };
+};
 
+const Stack = createStackNavigator<RootStackParamList>();
 type IconName = 'book-outline' | 'pencil' | 'stats-chart';
 
 interface TabItem {
@@ -88,8 +95,8 @@ export default function App() {
                 paddingBottom: 30,
               },
               headerShown: false,
-              tabBarActiveTintColor: color.MAIN_COLOR,
-              tabBarInactiveTintColor: color.TAB_COLOR_02,
+              tabBarActiveTintColor: color.TAB_COLOR_02,
+              tabBarInactiveTintColor: color.MAIN_COLOR,
               tabBarLabelStyle: {
                 fontSize: 14,
                 fontWeight: '800',

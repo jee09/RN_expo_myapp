@@ -20,7 +20,7 @@ type RootStackParamList = {
 };
 
 export const MainPage: React.FC = () => {
-  const carouselItems = ['View1', 'View2', 'View3'];
+  const carouselItems = ['읽고 싶어요', '읽고 있어요', '다 읽었어요'];
 
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
@@ -32,11 +32,12 @@ export const MainPage: React.FC = () => {
           <Ionicons
             name="search"
             size={20}
-            color="gray"
+            color={color.TAB_COLOR}
             style={{ marginRight: 8 }}
           />
           <TextInput
-            placeholder="책 이름을 검색해보세요"
+            placeholder="책 검색해서 추가하기"
+            placeholderTextColor={color.MAIN_COLOR}
             onFocus={() => navigation.navigate('SearchPage')}
           />
         </View>
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   },
   textinput: {
     backgroundColor: color.SUB_COLOR,
-    paddingVertical: 15,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
     fontSize: 15,
